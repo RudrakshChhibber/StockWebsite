@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DivineInvesting // Journal</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DivineInvesting // Terminal Journal</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     body {
@@ -14,38 +14,57 @@
       padding: 0;
     }
     .container {
-      max-width: 800px;
+      max-width: 900px;
       margin: auto;
       padding: 30px;
     }
     h1 {
       text-align: center;
       letter-spacing: 2px;
-      margin-bottom: 10px;
     }
     .subtitle {
       text-align: center;
-      font-size: 14px;
+      font-size: 13px;
       color: #00cc7a;
       margin-bottom: 30px;
     }
-    textarea {
+    .tabs {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tab {
+      cursor: pointer;
+      padding: 8px 16px;
+      border: 1px solid #00ff9c;
+      border-radius: 6px;
+    }
+    .tab.active {
+      background: #00ff9c;
+      color: #000;
+    }
+    textarea, input {
       width: 100%;
-      height: 200px;
       background: #000;
       color: #00ff9c;
       border: 1px solid #00ff9c;
       padding: 12px;
       border-radius: 6px;
-      resize: none;
       font-size: 14px;
+      font-family: inherit;
+      margin-bottom: 10px;
+    }
+    textarea {
+      height: 160px;
+      resize: none;
     }
     button {
       background: transparent;
       color: #00ff9c;
       border: 1px solid #00ff9c;
-      padding: 10px 18px;
-      margin-top: 12px;
+      padding: 8px 16px;
       border-radius: 6px;
       cursor: pointer;
       font-family: inherit;
@@ -58,69 +77,170 @@
       background: #000;
       padding: 15px;
       border-radius: 6px;
-      margin-top: 20px;
+      margin-top: 15px;
       border: 1px solid #003f2a;
     }
     .date {
       font-size: 11px;
       color: #00cc7a;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      background: #00ff9c;
-      animation: blink 1s infinite;
-    }
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0; }
-      100% { opacity: 1; }
+    .hidden {
+      display: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>DivineInvesting</h1>
-    <div class="subtitle">// private terminal journal</div>
+    <div class="subtitle">// terminal journal + finance OS</div>
 
-    <p>> Write entry<span class="cursor"></span></p>
-    <textarea id="journalInput" placeholder=">_"></textarea>
-    <button onclick="saveEntry()">SAVE</button>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('journal')">Journal</div>
+      <div class="tab" onclick="switchTab('finance')">Finance Log</div>
+      <div class="tab" onclick="switchTab('sod')">Stock of the Day</div>
+    </div>
 
-    <div id="entries"></div>
+    <!-- JOURNAL TAB -->
+    <div id="journalTab">
+      <p>> Write journal entry</p>
+      <textarea id="journalInput" placeholder=">_"></textarea>
+      <button onclick="saveJournal()">SAVE ENTRY</button>
+      <div id="journalEntries"></div>
+    </div>
+
+    <!-- FINANCE TAB -->
+    <div id="financeTab" class="hidden">
+      <p>> Log stock analysis</p>
+      <input id="stockName" placeholder="> Stock name" />
+      <textarea id="stockNotes" placeholder="> Why it might grow / fail / insights"></textarea>
+      <button onclick="saveStock()">SAVE ANALYSIS</button>
+      <div id="financeEntries"></div>
+    </div>
+
+    <!-- STOCK OF THE DAY TAB -->
+    <div id="sodTab" class="hidden">
+      <p>> Stock of the Day Analysis</p>
+      <input id="sodName" placeholder="> Stock name" />
+      <textarea id="sodBusiness" placeholder="> What does this company do?"></textarea>
+      <textarea id="sodGrowth" placeholder="> Why might it grow?"></textarea>
+      <textarea id="sodRisk" placeholder="> Why might it fail?"></textarea>
+      <textarea id="sodNotes" placeholder="> Your thoughts"></textarea>
+      <button onclick="saveSOD()">SAVE DAILY STOCK</button>
+      <div id="sodEntries"></div>
+    </div>
   </div>
 
   <script>
-    const entriesDiv = document.getElementById('entries');
+    const journalEntriesDiv = document.getElementById('journalEntries');
+    const financeEntriesDiv = document.getElementById('financeEntries');
+    const sodEntriesDiv = document.getElementById('sodEntries');
 
-    function loadEntries() {
+    function switchTab(tab) {
+      document.getElementById('journalTab').classList.add('hidden');
+      document.getElementById('financeTab').classList.add('hidden');
+      document.getElementById('sodTab').classList.add('hidden');
+
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+      if (tab === 'journal') {
+        document.getElementById('journalTab').classList.remove('hidden');
+        document.querySelectorAll('.tab')[0].classList.add('active');
+      } else if (tab === 'finance') {
+        document.getElementById('financeTab').classList.remove('hidden');
+        document.querySelectorAll('.tab')[1].classList.add('active');
+      } else {
+        document.getElementById('sodTab').classList.remove('hidden');
+        document.querySelectorAll('.tab')[2].classList.add('active');
+      }
+    }
+
+    function loadJournal() {
       const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-      entriesDiv.innerHTML = '';
+      journalEntriesDiv.innerHTML = '';
       entries.slice().reverse().forEach(entry => {
         const div = document.createElement('div');
         div.className = 'entry';
         div.innerHTML = `<div class="date">${entry.date}</div><div>${entry.text.replace(/\n/g, '<br>')}</div>`;
-        entriesDiv.appendChild(div);
+        journalEntriesDiv.appendChild(div);
       });
     }
 
-    function saveEntry() {
+    function saveJournal() {
       const text = document.getElementById('journalInput').value.trim();
       if (!text) return;
-
       const entries = JSON.parse(localStorage.getItem('journalEntries')) || [];
-      entries.push({
-        text,
-        date: new Date().toLocaleString()
-      });
-
+      entries.push({ text, date: new Date().toLocaleString() });
       localStorage.setItem('journalEntries', JSON.stringify(entries));
       document.getElementById('journalInput').value = '';
-      loadEntries();
+      loadJournal();
     }
 
-    loadEntries();
+    function loadFinance() {
+      const entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
+      financeEntriesDiv.innerHTML = '';
+      entries.slice().reverse().forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `<div class="date">${entry.date} — ${entry.stock}</div><div>${entry.notes.replace(/\n/g, '<br>')}</div>`;
+        financeEntriesDiv.appendChild(div);
+      });
+    }
+
+    function saveStock() {
+      const stock = document.getElementById('stockName').value.trim();
+      const notes = document.getElementById('stockNotes').value.trim();
+      if (!stock || !notes) return;
+
+      const entries = JSON.parse(localStorage.getItem('financeEntries')) || [];
+      entries.push({ stock, notes, date: new Date().toLocaleString() });
+      localStorage.setItem('financeEntries', JSON.stringify(entries));
+
+      document.getElementById('stockName').value = '';
+      document.getElementById('stockNotes').value = '';
+      loadFinance();
+    }
+
+    function loadSOD() {
+      const entries = JSON.parse(localStorage.getItem('sodEntries')) || [];
+      sodEntriesDiv.innerHTML = '';
+      entries.slice().reverse().forEach(entry => {
+        const div = document.createElement('div');
+        div.className = 'entry';
+        div.innerHTML = `<div class="date">${entry.date} — ${entry.name}</div>
+          <div><strong>Business:</strong> ${entry.business}</div>
+          <div><strong>Growth:</strong> ${entry.growth}</div>
+          <div><strong>Risk:</strong> ${entry.risk}</div>
+          <div><strong>Notes:</strong> ${entry.notes}</div>`;
+        sodEntriesDiv.appendChild(div);
+      });
+    }
+
+    function saveSOD() {
+      const name = document.getElementById('sodName').value.trim();
+      const business = document.getElementById('sodBusiness').value.trim();
+      const growth = document.getElementById('sodGrowth').value.trim();
+      const risk = document.getElementById('sodRisk').value.trim();
+      const notes = document.getElementById('sodNotes').value.trim();
+
+      if (!name || !business || !growth || !risk) return;
+
+      const entries = JSON.parse(localStorage.getItem('sodEntries')) || [];
+      entries.push({ name, business, growth, risk, notes, date: new Date().toLocaleString() });
+      localStorage.setItem('sodEntries', JSON.stringify(entries));
+
+      document.getElementById('sodName').value = '';
+      document.getElementById('sodBusiness').value = '';
+      document.getElementById('sodGrowth').value = '';
+      document.getElementById('sodRisk').value = '';
+      document.getElementById('sodNotes').value = '';
+
+      loadSOD();
+    }
+
+    loadJournal();
+    loadFinance();
+    loadSOD();
   </script>
 </body>
 </html>
